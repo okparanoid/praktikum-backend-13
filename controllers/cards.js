@@ -43,14 +43,32 @@ module.exports.likeCard = (req, res) => {
   Card.findByIdAndUpdate(req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true })
-  .then(() => res.send({ message: 'лайк'}))
-  .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    .orFail(() => new Error('NotFound'))
+    .then(() => res.send({ message: 'лайк' }))
+    .catch((err) => {
+      if (err.message === 'NotFound') {
+        res.status(404).send({ message: 'Нет карточки с таким id' });
+      } else if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Невалидный id' });
+      } else {
+        res.status(500).send({ message: 'На сервере произошла ошибка' });
+      }
+    });
 };
 
 module.exports.dislikeCard = (req, res) => {
   Card.findByIdAndUpdate(req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true })
-  .then(() => res.send({ message: 'дизлайк'}))
-  .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    .orFail(() => new Error('NotFound'))
+    .then(() => res.send({ message: 'дизлайк' }))
+    .catch((err) => {
+      if (err.message === 'NotFound') {
+        res.status(404).send({ message: 'Нет карточки с таким id' });
+      } else if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Невалидный id' });
+      } else {
+        res.status(500).send({ message: 'На сервере произошла ошибка' });
+      }
+    });
 };

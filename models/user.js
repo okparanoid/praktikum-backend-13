@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
       validator(link) {
         return validator.isURL(link);
       },
-      message: 'Здесь должна быть ссылка'
+      message: 'Здесь должна быть ссылка',
     },
   },
 });

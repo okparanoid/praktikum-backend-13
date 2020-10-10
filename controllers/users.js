@@ -14,14 +14,17 @@ module.exports.getUsers = (req, res) => {
 
 module.exports.getUser = (req, res) => {
   User.findById(req.params.userId)
-    .then((user) => {
-      if (user) {
-        res.send({ data: user });
+    .orFail(() => new Error('NotFound'))
+    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.message === 'NotFound') {
+        res.status(404).send({ message: 'Нет пользователя с таким id' });
+      } else if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Невалидный id' });
       } else {
-        res.status(404).send({ message: 'Нет такого пользователя' });
+        res.status(500).send({ message: 'На сервере произошла ошибка' });
       }
-    })
-    .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    });
 };
 
 module.exports.createUser = (req, res) => {
@@ -41,11 +44,16 @@ module.exports.createUser = (req, res) => {
 module.exports.changeUserInfo = (req, res) => {
   const { name, about } = req.body;
 
-  User.updateMany({ name, about })
+  User.findByIdAndUpdate(req.user._id, { name, about }, { runValidators: true })
+    .orFail(() => new Error('NotFound'))
     .then(() => res.send({ message: 'Профиль пользователя обновлен' }))
-    .catch(() => {
+    .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(400).send({ message: err.message });
+      } else if (err.message === 'NotFound') {
+        res.status(404).send({ message: 'Нет пользователя с таким id' });
+      } else if (err.name === 'CastError') {
+        res.status(404).send({ message: 'Невалидный id' });
       } else {
         res.status(500).send({ message: 'На сервере произошла ошибка' });
       }
@@ -53,13 +61,18 @@ module.exports.changeUserInfo = (req, res) => {
 };
 
 module.exports.changeUserAvatar = (req, res) => {
-  const avatar = req.body;
+  const { avatar } = req.body;
 
-  User.updateOne(avatar)
+  User.findByIdAndUpdate(req.user._id, { avatar }, { runValidators: true })
+    .orFail(() => new Error('NotFound'))
     .then(() => res.send({ message: 'Аватар обновлен' }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(400).send({ message: err.message });
+      } else if (err.message === 'NotFound') {
+        res.status(404).send({ message: 'Нет пользователя с таким id' });
+      } else if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Невалидный id' });
       } else {
         res.status(500).send({ message: 'На сервере произошла ошибка' });
       }
