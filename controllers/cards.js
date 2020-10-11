@@ -4,7 +4,7 @@ module.exports.getCards = (req, res) => {
   Card.find({})
     .then((cards) => {
       if (!cards.length) {
-        res.status(400).send({ message: 'Нет карточек' });
+        res.status(200).send({ data: [] });
         return;
       }
       res.send(cards);
@@ -29,14 +29,17 @@ module.exports.createCard = (req, res) => {
 
 module.exports.deleteCard = (req, res) => {
   Card.findByIdAndDelete(req.params.cardId)
-    .then((card) => {
-      if (card) {
-        res.send({ data: card });
+    .orFail(() => new Error('NotFound'))
+    .then(() => res.send({ message: 'Карточка удалена' }))
+    .catch((err) => {
+      if (err.message === 'NotFound') {
+        res.status(404).send({ message: 'Нет карточки с таким id' });
+      } else if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Невалидный id' });
       } else {
-        res.status(404).send({ message: 'Нет такой карточки' });
+        res.status(500).send({ message: 'На сервере произошла ошибка' });
       }
-    })
-    .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    });
 };
 
 module.exports.likeCard = (req, res) => {

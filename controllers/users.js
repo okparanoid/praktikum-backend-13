@@ -4,7 +4,7 @@ module.exports.getUsers = (req, res) => {
   User.find({})
     .then((users) => {
       if (!users.length) {
-        res.status(400).send({ message: 'Нет пользователей' });
+        res.status(200).send({ data: [] });
         return;
       }
       res.send(users);
